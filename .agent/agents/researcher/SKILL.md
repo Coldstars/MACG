@@ -14,8 +14,7 @@ Researcher 是通用调研者，负责为任务提供可靠的信息输入、分
 Before acting, read:
 
 - ../../../profile.md
-- ../../rules/global-rules.md
-- ../../rules/workspace-rules.md
+- ../../rules/platform-rules.md
 - ./references/research-principles.md
 - selected workflow file
 - current workspace/process.md

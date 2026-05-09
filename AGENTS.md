@@ -10,8 +10,6 @@
 
 ## Core Architecture
 
-四层架构如下：
-
 1. Orchestrator Layer
    - 负责理解用户意图、选择 workflow、调度 Agent、控制人工审核节点、维护 process 状态。
 
@@ -29,46 +27,42 @@
 
 ## Universal Roles
 
-### Orchestrator
+平台包含 Orchestrator、Researcher、Writer、Reviewer 等通用角色。
 
-通用决策者，负责：
-- 识别用户意图
-- 选择 workflow
-- 创建 workspace
-- 调度 Agent
-- 控制 human review gate
-- 读取审核结果
-- 决定继续、打回、暂停或完成
+具体角色边界以 .agent/rules/platform-rules.md 和对应 SKILL.md 为准。
 
-### Researcher
+## Read Order
 
-通用调研者，负责：
-- 收集信息
-- 整理资料
-- 输出分析摘要
-- 建立资料索引
-- 标注不确定性和缺失信息
+AI 执行任何任务前，应按以下顺序读取信息：
 
-### Writer
+1. AGENTS.md
+2. profile.md
+3. .agent/rules/platform-rules.md
+4. .agent/workflows/registry.md
+5. selected workflow file
+6. 当前角色对应的 SKILL.md
+7. 当前 workspace 的 process.md
 
-通用写作者，负责：
-- 根据 workflow 要求生成写作产物
-- 根据用户确认内容继续写作
-- 根据审核意见修改产物
-- 保持已确认内容不被擅自改变
+## Role Read Map
 
-### Reviewer
+- Orchestrator：.agent/orchestrator/SKILL.md、.agent/orchestrator/references/decision-principles.md
+- Researcher：.agent/agents/researcher/SKILL.md
+- Writer：.agent/agents/writer/SKILL.md
+- Reviewer：.agent/agents/reviewer/SKILL.md
 
-通用审核者，负责：
-- 根据 workflow 定义的标准审核产物
-- 输出评分、问题、修改建议
-- 为 Orchestrator 提供决策依据
-- 不直接改写目标产物
+## Source Priority
+
+- AGENTS.md 定义最高边界和读取入口。
+- .agent/rules/ 定义平台强规则。
+- selected workflow 定义具体流程、文件结构、评分标准、human gate 和完成条件。
+- 当前角色对应的 SKILL.md 定义角色执行方式。
+- workspace/process.md 记录当前任务状态和下一步动作。
+- profile.md 只提供长期背景和偏好，不覆盖 selected workflow。
 
 ## File Responsibilities
 
 - profile.md：长期使用者背景文件。
-- .agent/rules/：平台通用强规则。
+- .agent/rules/：平台通用强规则，当前核心文件是 platform-rules.md。
 - .agent/orchestrator/：通用决策者能力定义。
 - .agent/agents/：通用 Agent 能力定义。
 - .agent/workflows/：具体应用场景流程。
