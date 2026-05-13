@@ -37,6 +37,13 @@ workspaces/blog/<topic-slug>/
 ├── process.md
 └── research-report.md
 
+当 Researcher 需要保存清洗后的来源材料时，可以创建可选目录：
+
+workspaces/blog/<topic-slug>/
+└── sources/
+    ├── S1-clean.md
+    └── S2-clean.md
+
 用户在 Gate 1 确认一个或多个标题后，Orchestrator 必须为每个确认标题创建 slug 化标题目录：
 
 workspaces/blog/<topic-slug>/
@@ -67,6 +74,63 @@ topic-slug 命名规则：
 - 包含 FAQ、TDK、Slug。
 - 不虚构产品能力、案例、数据。
 - 不使用夸张营销语言。
+
+## Input Contract
+
+博客任务的最低输入应包括：
+
+- Topic direction
+- Target language
+- Target audience
+- Content type
+- Publishing goal
+
+如果用户没有提供全部字段，Orchestrator 可以基于 `profile.md` 和当前主题推断默认值，但必须在 `process.md` 记录 assumptions。
+
+推荐默认值：
+
+```text
+Target language: English
+Target audience: based on profile.md and topic
+Content type: SEO/GEO blog article
+Publishing goal: official website blog
+Article depth: standard
+```
+
+如果缺失信息会明显影响质量，Orchestrator 必须暂停并询问用户。
+
+如果缺失信息影响较小，Orchestrator 可以继续，但必须记录：
+
+```markdown
+## Assumptions
+
+- Assumption:
+- Why safe:
+- Where used:
+```
+
+## Output Contract
+
+一个完成的博客 workspace 必须包含：
+
+```text
+process.md
+research-report.md
+title-xx/outline.md
+title-xx/article.md
+title-xx/review.md
+```
+
+被选中的 `article.md` 必须包含：
+
+- H1
+- Introduction
+- Body with H2/H3
+- FAQ
+- TDK
+- Slug
+- Publishing Checklist
+- Revision Summary, if revised
 
 ## Human Gates
 
@@ -113,7 +177,7 @@ Researcher 必须输出 research-report.md，包含：
 ## Source Index
 
 表格字段：
-| ID | Source Name | URL | Type | Why Useful | Recommended Use |
+| ID | Source Name | URL / Local File | Type | Confidence | Why Useful | Recommended Use | Cautions |
 
 ## Title Options
 
@@ -211,6 +275,125 @@ Decision: pending / accepted_for_revision / publish_approved / rejected
 - overall_score < 70 或 status=major_revise：Orchestrator 判断是打回 Researcher 补充信息，还是打回 Writer 重写结构。
 - 自动修改最多 2 轮。
 
+## Failure Routing
+
+Reviewer 应尽可能包含 issue type 和 route suggestion，供 Orchestrator 决策。
+
+| Issue Type | Route To | Reason |
+|---|---|---|
+| missing_intent | Orchestrator or Writer | Content does not answer the real user intent |
+| missing_information | Researcher | More evidence or context is needed |
+| missing_source | Researcher | Source index is insufficient |
+| unsupported_claim | Researcher + Writer | Claim must be verified or removed |
+| weak_structure | Writer | Structure or section order needs revision |
+| thin_content | Writer | Content lacks depth or examples |
+| wrong_product_fit | Orchestrator + Writer | Positioning or product mention is off |
+| ai_tone | Writer | Style needs rewriting |
+| hard_sell | Writer | Product mention is too promotional |
+| duplicate_angle | Orchestrator | Topic direction may need reframing |
+| poor_extractability | Writer | Content is hard for AI search or downstream systems to parse |
+| unclear_next_action | Reviewer or Orchestrator | Review feedback or process decision is unclear |
+| workflow_gap | Human | Workflow lacks required standard |
+
+## AI Writing Pattern Review
+
+Reviewer 必须检查博客内容中的 AI 写作痕迹。
+
+常见问题包括：
+
+- Generic AI-style introduction
+- Overly polished rhythm
+- Repetitive paragraph length
+- Excessive transition words
+- Inflated marketing language
+- Vague claims
+- Generic conclusion
+- Too many similar bullet lists
+- Formulaic “not just X, but Y” structure
+- Chatbot-like phrasing
+
+如果问题较轻，使用 `status=revise` 并标记为低严重度，要求 Writer 局部处理。
+
+如果问题广泛存在，标记为 `major_revise`，并要求 Writer 重写受影响章节。
+
+## Single Mode
+
+当用户只需要一篇博客文章时，使用 Single Mode。
+
+默认流程：
+
+```text
+Research → Title Selection → Outline → Outline Confirmation → Article → Review → Revise if needed → Publish Confirmation
+```
+
+Single Mode 下，除非用户明确要求 comparison mode，不生成多篇完整文章。
+
+## Batch Mode
+
+当用户要求一次生成多篇博客文章时，使用 Batch Mode。
+
+Batch Mode 规则：
+
+- 每个 topic 创建一个独立 workspace。
+- 先为所有 topic 执行 Researcher。
+- 批量请求用户确认标题。
+- 不直接生成所有完整正文。
+- 必须使用 Pilot First Rule。
+
+## Pilot First Rule
+
+当用户要求多篇文章时，先生成第一篇 pilot article。
+
+Pilot flow：
+
+```text
+Batch research
+  ↓
+User confirms titles
+  ↓
+Writer creates first pilot outline and article
+  ↓
+Reviewer reviews pilot
+  ↓
+User confirms style and quality
+  ↓
+Continue with remaining articles
+```
+
+在 pilot 通过 review 或用户明确 override 前，不继续生成剩余文章。
+
+## Done Criteria
+
+博客任务只有在满足以下条件时才算完成：
+
+- `article.md` exists.
+- Required sections are present.
+- `review.md` status is `pass`, or the user explicitly overrides.
+- Publish confirmation gate is approved by the user.
+- `process.md` status is `completed`.
+
+## Memory Update Rule
+
+当用户给出以下类型反馈时：
+
+```text
+This title is too generic.
+This opening is good.
+Do not use this structure again.
+The product mention feels too hard-sell.
+This style is closer to what I want.
+```
+
+Orchestrator 应建议把反馈沉淀到：
+
+```text
+workspaces/_memory/content-lessons.md
+workspaces/_memory/approved-patterns.md
+workspaces/_memory/rejected-patterns.md
+```
+
+除非 workflow 或用户明确允许，不要在没有用户确认时静默修改 memory 文件。
+
 ## Workflow Steps
 
 1. Orchestrator receives user intent.
@@ -261,6 +444,8 @@ blog-writing
 - reviewer
 
 ## Current Status
+
+## Assumptions
 
 ## Topic Slug
 

@@ -45,10 +45,10 @@ AI 执行任何任务前，应按以下顺序读取信息：
 
 ## Role Read Map
 
-- Orchestrator：.agent/orchestrator/SKILL.md、.agent/orchestrator/references/decision-principles.md
-- Researcher：.agent/agents/researcher/SKILL.md
-- Writer：.agent/agents/writer/SKILL.md
-- Reviewer：.agent/agents/reviewer/SKILL.md
+- Orchestrator：.agent/orchestrator/SKILL.md，并以该文件 Must Read 中列出的 references 为准。
+- Researcher：.agent/agents/researcher/SKILL.md，并以该文件 Must Read 中列出的 references 为准。
+- Writer：.agent/agents/writer/SKILL.md，并以该文件 Must Read 中列出的 references 为准。
+- Reviewer：.agent/agents/reviewer/SKILL.md，并以该文件 Must Read 中列出的 references 为准。
 
 ## Source Priority
 
