@@ -1,0 +1,30 @@
+# Fallback seed keywords for profile-driven channel discovery.
+# If profile.md exists, its industry keywords, product lines, users, and use cases
+# are prepended to this list automatically.
+
+campaign:
+  default_slug: profile-channel-discovery
+  product_name: ""
+  language: English
+  recent_days: 120
+  max_raw_candidates: 500
+  selected_count: 50
+
+keywords:
+  - AI agent tutorial
+  - LangChain tutorial
+  - LlamaIndex tutorial
+  - RAG tutorial
+  - Python web scraping
+  - SERP API tutorial
+  - Google Search API tutorial
+  - SEO automation
+  - n8n automation tutorial
+  - web scraping API
+  - AI tools for developers
+  - build AI agent with search
+
+channel_types:
+  - youtube
+  - newsletter
+  - technical_blog

@@ -218,26 +218,3 @@ Pass only the data needed for the task. Useful fields often include result title
 ### How do SEO teams use live search data in AI agents?
 
 SEO teams can use live search data for keyword visibility checks, competitor monitoring, SERP feature analysis, content brief generation, local SEO comparisons, and reporting. The agent can summarize patterns, but the underlying search parameters and sources should remain visible.
-
-## TDK
-
-Title: How to Give an AI Agent Access to Live Search Results
-
-Description: Learn how to connect an AI agent to live search results using a SERP API, structured search data, filtering, and practical SEO and SaaS workflows.
-
-Keywords: AI agent live search results, SERP API for AI agents, search results API, live search data, AI search grounding, live SERP data
-
-## Slug
-
-ai-agent-live-search-results
-
-## Publishing Checklist
-
-- H1 appears once.
-- Introduction gives a direct answer to the target query.
-- H2/H3 structure is clear and follows the approved outline.
-- Tables support GEO extraction and quick scanning.
-- FAQ answers are concise and target long-tail questions.
-- No unsupported performance, coverage, ranking, or accuracy claims are included.
-- Product mention is light, factual, and limited to the available Talordata positioning.
-- TDK and slug are included.

@@ -25,6 +25,16 @@
 - writer
 - reviewer
 
+## Memory Inputs
+
+Before producing or revising blog content, relevant agents should read the content memory files when they exist:
+
+- `workspaces/_memory/content/approved-patterns.md`
+- `workspaces/_memory/content/rejected-patterns.md`
+- `workspaces/_memory/content/content-lessons.md`
+
+These files capture confirmed user preferences for content work. They guide writing choices but do not override `AGENTS.md`, `profile.md`, platform rules, this workflow, role `SKILL.md` files, or the current workspace `process.md`.
+
 ## Workspace Location
 
 workspaces/blog/<topic-slug>/
@@ -71,7 +81,8 @@ topic-slug 命名规则：
 - GEO / AI Search 引用友好。
 - 可直接发布到官网博客。
 - 文章结构清晰、段落简洁。
-- 包含 FAQ、TDK、Slug。
+- 最终 article.md 只包含可直接发布的读者可见正文；不自动附加 TDK、Slug、Publishing Checklist 等内部发布辅助内容。
+- 包含 FAQ。
 - 不虚构产品能力、案例、数据。
 - 不使用夸张营销语言。
 
@@ -127,10 +138,14 @@ title-xx/review.md
 - Introduction
 - Body with H2/H3
 - FAQ
+- Revision Summary, if revised
+
+`article.md` 是可复制即用的最终博客正文。除非用户明确要求，禁止在 `article.md` 末尾自动生成或附加：
+
 - TDK
 - Slug
 - Publishing Checklist
-- Revision Summary, if revised
+- 其他内部发布、审核、验收或元信息区块
 
 ## Human Gates
 
@@ -209,9 +224,7 @@ Writer 必须：
   - Introduction
   - H2/H3 body
   - FAQ
-  - TDK
-  - Slug
-  - Publishing Checklist
+- article.md 必须是可直接发布到官网的正文，不包含 TDK、Slug、Publishing Checklist 或其他非读者可见内容，除非用户明确要求。
 - article.md 始终是当前候选最终稿。
 - 每个选中标题必须独立生成 outline.md、article.md 和 review.md。
 - 不创建 final.md。
@@ -227,8 +240,8 @@ Writer 必须：
 - 避免关键词堆砌。
 - 使用定义块、步骤、表格、FAQ、列表等 AI 友好结构。
 - FAQ 回答要简短直接。
-- TDK 要适合搜索展示。
-- Slug 要简短、英文、小写、连字符。
+- 如用户单独要求 TDK，应作为独立交付内容或单独文件输出，不写入 article.md 正文。
+- Slug 仅用于 workspace/title folder 命名，除非用户明确要求，不写入 article.md 正文。
 - 段落不要过长。
 - 内容不能只讲概念，要有应用场景和判断标准。
 - 不出现无来源数据。
@@ -262,7 +275,7 @@ Decision: pending / accepted_for_revision / publish_approved / rejected
 
 评分标准：
 
-- SEO Score：搜索意图、关键词覆盖、标题结构、TDK、内链建议。
+- SEO Score：搜索意图、关键词覆盖、标题结构、可发布正文质量、内链建议。
 - GEO Score：直接回答、定义块、FAQ、表格、结构化表达、AI 可引用性。
 - Readability Score：段落长度、表达自然度、废话比例、逻辑清晰度。
 - Product Fit Score：是否自然引出产品价值，是否避免硬广，是否没有虚构能力。
@@ -387,9 +400,9 @@ This style is closer to what I want.
 Orchestrator 应建议把反馈沉淀到：
 
 ```text
-workspaces/_memory/content-lessons.md
-workspaces/_memory/approved-patterns.md
-workspaces/_memory/rejected-patterns.md
+workspaces/_memory/content/content-lessons.md
+workspaces/_memory/content/approved-patterns.md
+workspaces/_memory/content/rejected-patterns.md
 ```
 
 除非 workflow 或用户明确允许，不要在没有用户确认时静默修改 memory 文件。

@@ -1,0 +1,79 @@
+# Scoring rules for channel discovery.
+# Total score: 100
+
+weights:
+  audience_match: 30
+  content_fit: 20
+  activity: 15
+  sponsorship_readiness: 10
+  contactability: 10
+  authority_reach: 10
+  long_term_search_value: 5
+
+priority_thresholds:
+  high: 80
+  medium: 60
+
+audience_keywords:
+  ai_agent:
+    - ai agent
+    - ai agents
+    - agentic
+    - langchain
+    - llamaindex
+    - rag
+    - retrieval augmented generation
+    - llm
+    - openai
+    - claude
+  developer:
+    - python
+    - javascript
+    - api
+    - developer
+    - devtools
+    - automation
+    - workflow
+    - n8n
+  seo_data:
+    - seo
+    - rank tracking
+    - serp
+    - google search
+    - bing search
+    - web scraping
+    - scraping
+    - data extraction
+
+content_fit_keywords:
+  - tutorial
+  - guide
+  - how to
+  - build
+  - demo
+  - walkthrough
+  - hands-on
+  - code
+  - example
+  - workflow
+  - template
+
+sponsor_keywords:
+  - sponsor
+  - sponsorship
+  - advertise
+  - advertising
+  - media kit
+  - partner
+  - partnership
+  - work with me
+  - business inquiries
+  - collaborations
+
+collaboration_templates:
+  ai_agent: "Sponsored tutorial: Show how {product_name} supports AI agent workflows."
+  rag: "Technical tutorial: Use {product_name} as external context for LLM/RAG workflows."
+  python_scraping: "Sponsored coding video: Build a practical Python workflow with {product_name}."
+  seo: "Sponsored article: Use {product_name} for search visibility, monitoring, or SEO workflows."
+  n8n: "Workflow template: Automate a repeatable workflow with {product_name}."
+  general: "Sponsored technical tutorial or newsletter placement featuring {product_name}."

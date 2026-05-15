@@ -1,0 +1,79 @@
+# Source configuration for channel-finder.
+
+user_agent: "MACG-ChannelFinder/1.0 (+https://github.com/Coldstars/MACG)"
+request_timeout_seconds: 20
+request_delay_seconds: 1.2
+demo_mode: false
+
+free_discovery:
+  enabled: true
+  providers:
+    - auto
+
+crawl:
+  obey_robots_txt: true
+  request_timeout_seconds: 20
+  request_delay_seconds: 1.2
+  max_links_per_seed: 12
+
+ddgs:
+  # Disabled by default because the current ddgs/primp TLS stack can hard-crash
+  # on some macOS keychain environments. Re-enable only after local smoke tests.
+  enabled: false
+  region: us-en
+  safesearch: moderate
+  max_results_per_keyword: 20
+
+ytdlp:
+  enabled: true
+  max_results_per_keyword: 20
+  no_download: true
+
+github:
+  enabled: true
+  max_results_per_keyword: 8
+  unauthenticated: true
+  request_timeout_seconds: 20
+
+# Optional generic SERP API endpoint.
+# Keep empty unless you have a search API endpoint compatible with query parameters.
+# Example template:
+# https://api.example.com/search?q={query}&num={num}
+serp_api_url_template: ""
+
+# Optional pages to crawl for newsletter / sponsor discovery.
+newsletter_seed_urls:
+  - https://www.paved.com/
+  - https://www.passionfroot.me/
+
+technical_blog_seed_urls: []
+
+# Manual seeds are useful for known channels you want to score.
+manual_seed_candidates: []
+
+# Demo seeds are only used when demo_mode is true and manual_seed_candidates is empty.
+demo_seed_candidates:
+  - name: "Google Search Central Blog"
+    platform: "Technical Blog"
+    channel_type: "Technical Blog"
+    url: "https://developers.google.com/search/blog"
+    topic: "Search, SEO, structured data, crawling, developer documentation"
+    audience: "SEO teams and web developers"
+    source_keyword: "demo_seed"
+    confidence: "low"
+  - name: "LangChain Blog"
+    platform: "Technical Blog"
+    channel_type: "Technical Blog"
+    url: "https://blog.langchain.com/"
+    topic: "AI agents, LLM applications, retrieval, developer workflows"
+    audience: "AI developers and LLM builders"
+    source_keyword: "demo_seed"
+    confidence: "low"
+  - name: "n8n Blog"
+    platform: "Technical Blog"
+    channel_type: "Technical Blog"
+    url: "https://blog.n8n.io/"
+    topic: "Automation workflows, integrations, AI automation"
+    audience: "Automation builders and technical operators"
+    source_keyword: "demo_seed"
+    confidence: "low"

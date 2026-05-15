@@ -9,6 +9,7 @@
 | Workflow | Path | Status | Required Agents | Trigger Intent |
 | --- | --- | --- | --- | --- |
 | blog-writing | .agent/workflows/blog-writing.md | active | orchestrator, researcher, writer, reviewer | 写博客、SEO 文章、GEO 友好文章、官网博客、教程型文章、对比型文章、替代方案文章、场景型文章、产品主题博客 |
+| channel-discovery | .agent/workflows/channel-discovery.md | active | orchestrator, channel-analyst | 找推广渠道、找合作渠道、找付费渠道、找 YouTube 博主、找 Newsletter、找技术博客合作、渠道投放、渠道合作、creator sponsorship、newsletter sponsorship、paid channel finder、channel discovery agent、渠道发现 Agent |
 
 ## Selection Rules
 

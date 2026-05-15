@@ -4,10 +4,6 @@
 
 这是一个本地多 Agent 工作流平台，用于通过 Orchestrator 调度不同 Agent 和 Workflow 完成任务。
 
-## Current Scope
-
-当前项目先跑通第一个 workflow，但平台架构不能绑定某一个具体场景。
-
 ## Core Architecture
 
 1. Orchestrator Layer
@@ -27,7 +23,7 @@
 
 ## Universal Roles
 
-平台包含 Orchestrator、Researcher、Writer、Reviewer 等通用角色。
+平台包含 Orchestrator、Researcher、Writer、Reviewer、Channel Analyst 等通用角色。
 
 具体角色边界以 .agent/rules/platform-rules.md 和对应 SKILL.md 为准。
 
@@ -41,7 +37,7 @@ AI 执行任何任务前，应按以下顺序读取信息：
 4. .agent/workflows/registry.md
 5. selected workflow file
 6. 当前角色对应的 SKILL.md
-7. 当前 workspace 的 process.md
+7. 当前 workspace 的 process.md，或 selected workflow 明确声明的等价结构化运行记录。
 
 ## Role Read Map
 
@@ -49,6 +45,7 @@ AI 执行任何任务前，应按以下顺序读取信息：
 - Researcher：.agent/agents/researcher/SKILL.md，并以该文件 Must Read 中列出的 references 为准。
 - Writer：.agent/agents/writer/SKILL.md，并以该文件 Must Read 中列出的 references 为准。
 - Reviewer：.agent/agents/reviewer/SKILL.md，并以该文件 Must Read 中列出的 references 为准。
+- Channel Analyst：.agent/agents/channel-analyst/SKILL.md，并以该文件 Must Read 中列出的 references 为准。
 
 ## Source Priority
 
@@ -56,7 +53,7 @@ AI 执行任何任务前，应按以下顺序读取信息：
 - .agent/rules/ 定义平台强规则。
 - selected workflow 定义具体流程、文件结构、评分标准、human gate 和完成条件。
 - 当前角色对应的 SKILL.md 定义角色执行方式。
-- workspace/process.md 记录当前任务状态和下一步动作。
+- workspace/process.md 或 selected workflow 明确声明的等价结构化运行记录，记录当前任务状态和下一步动作。
 - profile.md 只提供长期背景和偏好，不覆盖 selected workflow。
 
 ## File Responsibilities
