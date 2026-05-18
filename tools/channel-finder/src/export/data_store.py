@@ -136,6 +136,44 @@ def build_review_queue(candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     return queue
 
 
+def build_aggregate_master(channel_root: Path, output_path: Path) -> List[Dict[str, Any]]:
+    """Merge every campaign master into one global channel library."""
+    records: List[Dict[str, Any]] = []
+    for master_path in sorted(channel_root.glob("*/data/master-candidates.json")):
+        if master_path.resolve() == output_path.resolve():
+            continue
+        rows = read_json(master_path, default=[])
+        if isinstance(rows, list):
+            records.extend([row for row in rows if isinstance(row, dict)])
+
+    merged = dedupe_candidates(records)
+    for candidate in merged:
+        scores = [
+            _safe_int(candidate.get("best_score")),
+            _safe_int(candidate.get("last_score")),
+            _safe_int(candidate.get("fit_score")),
+        ]
+        best_score = max(scores)
+        candidate["best_score"] = best_score
+        candidate["fit_score"] = best_score or _safe_int(candidate.get("fit_score"))
+        candidate.setdefault("status", candidate.get("review_status", "new") or "new")
+        candidate.setdefault("review_status", candidate.get("status", "new") or "new")
+        candidate.setdefault("review_notes", "")
+
+    merged.sort(
+        key=lambda row: (
+            _safe_int(row.get("best_score") or row.get("fit_score")),
+            _safe_int(row.get("seen_count")),
+            str(row.get("name") or ""),
+        ),
+        reverse=True,
+    )
+    for idx, candidate in enumerate(merged, start=1):
+        candidate["rank"] = idx
+    write_json(output_path, merged)
+    return merged
+
+
 def _review_focus(candidate: Dict[str, Any]) -> List[str]:
     focus: List[str] = []
     if candidate.get("priority") == "High":
@@ -155,3 +193,10 @@ def _as_list(value: Any) -> List[str]:
     if isinstance(value, list):
         return [str(item) for item in value if item not in (None, "", "Unknown")]
     return [part.strip() for part in str(value).split(",") if part.strip()]
+
+
+def _safe_int(value: Any) -> int:
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0

@@ -21,12 +21,12 @@ TOOL_DIR = CURRENT_DIR.parent
 if str(TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(TOOL_DIR))
 
-from src.export.data_store import build_review_queue, dedupe_candidates, select_top_candidates, update_master
+from src.export.channel_library_report import generate_channel_library_report
+from src.export.data_store import build_aggregate_master, build_review_queue, dedupe_candidates, select_top_candidates, update_master
 from src.export.export_csv import export_candidates_csv
-from src.export.html_report import generate_html_report
 from src.profile_context import build_profile_keywords, find_profile_path, load_profile_context, merge_profile_into_scoring_rules, profile_summary_text
 from src.score.channel_scorer import ChannelScorer
-from src.utils import guess_workspace_root, load_yaml, slugify, unique_list, utc_now_iso, write_json
+from src.utils import guess_workspace_root, load_yaml, normalize_url, slugify, unique_list, utc_now_iso, write_json
 
 LOGGER = logging.getLogger("channel-finder")
 
@@ -140,6 +140,7 @@ def main() -> int:
         print_dependency_error(missing_core)
         return 2
 
+    from src.crawl.contact_extractor import extract_contacts, first_or_unknown
     from src.crawl.page_crawler import PageCrawler
     from src.discover.ddgs_discover import DDGSDiscoverer
     from src.discover.github_discover import GitHubDiscoverer
@@ -173,12 +174,17 @@ def main() -> int:
     recent_days = args.recent_days or campaign_defaults.get("recent_days", 120)
     max_raw_candidates = int(campaign_defaults.get("max_raw_candidates", 500) or 500)
     workspace_root = Path(args.workspace_root).resolve() if args.workspace_root else guess_workspace_root(TOOL_DIR)
-    campaign_dir = workspace_root / "channel-discovery" / campaign_slug
+    channel_root = workspace_root / "channel-discovery"
+    campaign_dir = channel_root / campaign_slug
     data_dir = campaign_dir / "data"
     runs_dir = data_dir / "runs"
+    global_data_dir = channel_root / "data"
+    global_runs_dir = global_data_dir / "runs"
     campaign_dir.mkdir(parents=True, exist_ok=True)
     data_dir.mkdir(parents=True, exist_ok=True)
     runs_dir.mkdir(parents=True, exist_ok=True)
+    global_data_dir.mkdir(parents=True, exist_ok=True)
+    global_runs_dir.mkdir(parents=True, exist_ok=True)
 
     input_config: Dict[str, Any] = {
         "campaign_slug": campaign_slug,
@@ -254,7 +260,11 @@ def main() -> int:
 
     if "ytdlp" in providers and "youtube" in channel_types:
         ytdlp_config = source_config.get("ytdlp", {})
-        ytdlp = YtDlpDiscoverer(max_results_per_keyword=int(ytdlp_config.get("max_results_per_keyword", args.max_results_per_keyword)))
+        ytdlp = YtDlpDiscoverer(
+            max_results_per_keyword=int(ytdlp_config.get("max_results_per_keyword", args.max_results_per_keyword)),
+            enrich_video_details=bool(ytdlp_config.get("enrich_video_details", True)),
+            max_detail_channels=int(ytdlp_config.get("max_detail_channels", 80)),
+        )
         run_provider("ytdlp", lambda: ytdlp.discover(keywords))
 
     if "github" in providers:
@@ -262,6 +272,8 @@ def main() -> int:
         github = GitHubDiscoverer(
             max_results_per_keyword=int(github_config.get("max_results_per_keyword", min(args.max_results_per_keyword, 10))),
             timeout=int(github_config.get("request_timeout_seconds", 20)),
+            enrich_owner_profiles=bool(github_config.get("enrich_owner_profiles", True)),
+            max_owner_profile_requests=int(github_config.get("max_owner_profile_requests", 40)),
         )
         run_provider("github", lambda: github.discover(keywords))
 
@@ -276,6 +288,14 @@ def main() -> int:
 
     normalized_candidates = [normalize_candidate_defaults(c, run_id) for c in raw_candidates]
     normalized_candidates = dedupe_candidates(normalized_candidates)
+    if bool(crawl_config.get("enrich_contact_pages", True)):
+        enrich_candidate_contacts(
+            normalized_candidates,
+            crawler,
+            limit=int(crawl_config.get("max_contact_enrichment_candidates", 80)),
+            extract_contacts_fn=extract_contacts,
+            first_or_unknown_fn=first_or_unknown,
+        )
 
     scorer = ChannelScorer(scoring_rules, recent_days=recent_days, product_name=product_name)
     scored_candidates = [scorer.score(c) for c in normalized_candidates]
@@ -316,10 +336,19 @@ def main() -> int:
     write_json(data_dir / "selected-50.json", selected_50)
     write_json(data_dir / "review-queue.json", review_queue)
     export_candidates_csv(data_dir / "selected-50.csv", selected_50)
-    generate_html_report(campaign_dir / "index.html", campaign_slug, run_id, generated_at, input_config, selected_50, summary)
 
-    LOGGER.info("Done. Open report: %s", campaign_dir / "index.html")
+    global_master = build_aggregate_master(channel_root, global_data_dir / "master-candidates.json")
+    global_review_queue = build_review_queue(global_master)
+    global_summary = build_library_summary(global_master, summary, campaign_slug, run_id)
+    write_json(global_runs_dir / f"{run_id}.json", run_payload)
+    write_json(global_data_dir / "all-candidates.json", global_master)
+    write_json(global_data_dir / "review-queue.json", global_review_queue)
+    export_candidates_csv(global_data_dir / "all-candidates.csv", global_master)
+    generate_channel_library_report(channel_root / "index.html", generated_at, input_config, global_master, global_summary)
+
+    LOGGER.info("Done. Open global report: %s", channel_root / "index.html")
     LOGGER.info("Selected candidates: %s", len(selected_50))
+    LOGGER.info("Global channel library candidates: %s", len(global_master))
     if not raw_candidates:
         LOGGER.warning("No raw candidates found. Check network access, free discovery dependencies, seed URLs, or manual_seed_candidates.")
     return 0
@@ -413,6 +442,89 @@ def build_run_warnings(requested_count: int, selected: List[Dict[str, Any]], pro
     if selected_count < requested_count:
         warnings.append("Try enabling more providers, adding manual seeds, lowering filters, or increasing max-results-per-keyword.")
     return warnings
+
+
+def build_library_summary(
+    library_candidates: List[Dict[str, Any]],
+    latest_run_summary: Dict[str, Any],
+    campaign_slug: str,
+    run_id: str,
+) -> Dict[str, Any]:
+    return {
+        "library_count": len(library_candidates),
+        "latest_campaign": campaign_slug,
+        "latest_run_id": run_id,
+        "latest_run_summary": latest_run_summary,
+        "provider_statuses": latest_run_summary.get("provider_statuses", []),
+        "warnings": latest_run_summary.get("warnings", []),
+        "high_priority_count": sum(1 for c in library_candidates if c.get("priority") == "High"),
+        "medium_priority_count": sum(1 for c in library_candidates if c.get("priority") == "Medium"),
+        "low_priority_count": sum(1 for c in library_candidates if c.get("priority") == "Low"),
+        "contact_available_count": sum(
+            1 for c in library_candidates
+            if c.get("contact_email") not in (None, "", "Unknown")
+            or c.get("contact_page") not in (None, "", "Unknown")
+        ),
+        "sponsor_page_found_count": sum(
+            1 for c in library_candidates
+            if c.get("sponsor_page") not in (None, "", "Unknown")
+            or c.get("media_kit_url") not in (None, "", "Unknown")
+        ),
+    }
+
+
+def enrich_candidate_contacts(
+    candidates: List[Dict[str, Any]],
+    crawler: Any,
+    limit: int,
+    extract_contacts_fn: Any,
+    first_or_unknown_fn: Any,
+) -> None:
+    checked = 0
+    for candidate in candidates:
+        if checked >= max(0, int(limit or 0)):
+            return
+        if candidate.get("platform") == "YouTube" or candidate.get("domain") == "youtube.com":
+            continue
+        if candidate.get("contact_email") not in (None, "", "Unknown"):
+            continue
+        candidate_url = normalize_url(str(candidate.get("url") or candidate.get("canonical_url") or ""))
+        if not candidate_url:
+            continue
+        checked += 1
+        result = crawler.fetch(candidate_url)
+        if result.status_code == 0 or not result.html:
+            continue
+        contacts = extract_contacts_fn(result.html, result.url)
+        _fill_contact_fields(candidate, contacts, first_or_unknown_fn)
+
+        followup_urls = unique_list(
+            contacts.get("contact_pages", [])[:2]
+            + contacts.get("sponsor_pages", [])[:1]
+            + contacts.get("media_kit_urls", [])[:1]
+        )
+        for url in followup_urls:
+            if candidate.get("contact_email") not in (None, "", "Unknown"):
+                break
+            followup = crawler.fetch(url)
+            if followup.status_code == 0 or not followup.html:
+                continue
+            followup_contacts = extract_contacts_fn(followup.html, followup.url)
+            _fill_contact_fields(candidate, followup_contacts, first_or_unknown_fn)
+
+
+def _fill_contact_fields(candidate: Dict[str, Any], contacts: Dict[str, List[str]], first_or_unknown_fn: Any) -> None:
+    mapping = {
+        "contact_email": "emails",
+        "contact_page": "contact_pages",
+        "sponsor_page": "sponsor_pages",
+        "media_kit_url": "media_kit_urls",
+    }
+    for field, key in mapping.items():
+        if candidate.get(field) in (None, "", "Unknown"):
+            value = first_or_unknown_fn(contacts.get(key, []))
+            if value != "Unknown":
+                candidate[field] = value
 
 
 if __name__ == "__main__":

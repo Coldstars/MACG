@@ -52,7 +52,7 @@ class ChannelScorer:
         result.setdefault("notes", "")
         if is_competitor_reference:
             existing_notes = result.get("notes")
-            suffix = "Flagged as competitor/reference site from profile; use for monitoring, not default outreach."
+            suffix = "命中 profile 中的竞品/参考站；建议用于竞品观察，不默认作为 outreach 候选。"
             result["notes"] = f"{existing_notes}; {suffix}" if existing_notes and existing_notes != "Unknown" else suffix
             result["review_notes"] = suffix
         return result
@@ -162,23 +162,23 @@ class ChannelScorer:
     def _score_reason(self, candidate: Dict[str, Any], text: str) -> str:
         reasons: List[str] = []
         if contains_any(text, ["ai agent", "langchain", "llamaindex", "rag", "llm"]):
-            reasons.append("matches AI agent / LLM workflow topics")
+            reasons.append("匹配 AI Agent / LLM 工作流主题")
         if contains_any(text, ["python", "web scraping", "api", "developer"]):
-            reasons.append("matches developer and data API audience")
+            reasons.append("匹配开发者和数据 API 受众")
         if contains_any(text, ["seo", "rank tracking", "serp", "google search"]):
-            reasons.append("matches SEO and search data use cases")
+            reasons.append("匹配 SEO 和搜索数据场景")
         if candidate.get("contact_email") not in (None, "", "Unknown") or candidate.get("contact_page") not in (None, "", "Unknown"):
-            reasons.append("has a public contact path")
+            reasons.append("有公开联系路径")
         if candidate.get("sponsor_page") not in (None, "", "Unknown") or candidate.get("media_kit_url") not in (None, "", "Unknown"):
-            reasons.append("has sponsorship or media kit signal")
+            reasons.append("有赞助页或 media kit 信号")
         if not reasons:
-            reasons.append("has partial relevance but needs manual validation")
-        return "; ".join(reasons) + "."
+            reasons.append("有一定相关性，需要人工确认")
+        return "；".join(reasons) + "。"
 
     def _recommend_collaboration(self, text: str) -> str:
         templates = self.rules.get("collaboration_templates", {})
         lowered = text.lower()
-        selected = templates.get("general", "Sponsored technical tutorial featuring {product_name}.")
+        selected = templates.get("general", "赞助技术教程：介绍 {product_name}。")
         if any(k in lowered for k in ["n8n", "workflow", "automation"]):
             selected = templates.get("n8n") or selected
             return self._format_template(selected)

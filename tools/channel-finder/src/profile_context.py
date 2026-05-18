@@ -66,6 +66,7 @@ def load_profile_context(path: Path | None) -> ProfileContext:
 
 def build_profile_keywords(context: ProfileContext, limit: int = 40) -> List[str]:
     keyword_candidates: List[str] = []
+    keyword_candidates.extend(build_competitor_channel_keywords(context))
     keyword_candidates.extend(context.industry_keywords)
     keyword_candidates.extend(context.product_lines)
     keyword_candidates.extend(context.use_cases)
@@ -81,6 +82,44 @@ def build_profile_keywords(context: ProfileContext, limit: int = 40) -> List[str
             expanded.append(f"{clean} tutorial")
             expanded.append(f"{clean} guide")
     return unique_list(expanded)[:limit]
+
+
+def build_competitor_channel_keywords(context: ProfileContext, limit: int = 40) -> List[str]:
+    """Build queries that find channels already covering competitors."""
+    modifiers = [
+        "tutorial",
+        "review",
+        "alternative",
+        "comparison",
+        "sponsored",
+        "sponsor",
+        "newsletter",
+        "youtube",
+        "web scraping",
+        "SEO API",
+        "SERP API",
+    ]
+    queries: List[str] = []
+    for brand in competitor_brands(context):
+        for modifier in modifiers:
+            queries.append(f"{brand} {modifier}")
+    return unique_list(queries)[:limit]
+
+
+def competitor_brands(context: ProfileContext) -> List[str]:
+    brands: List[str] = []
+    for value in context.competitor_reference_sites:
+        clean = _clean_item(value)
+        if not clean:
+            continue
+        match = re.search(r"https?://(?:www\.)?([^/\s)]+)", clean.lower())
+        if match:
+            domain = match.group(1).strip()
+            brands.append(domain.split(".")[0])
+            brands.append(domain)
+        else:
+            brands.append(clean)
+    return unique_list([brand for brand in brands if brand])
 
 
 def merge_profile_into_scoring_rules(scoring_rules: Dict[str, Any], context: ProfileContext) -> Dict[str, Any]:

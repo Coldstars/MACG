@@ -71,9 +71,9 @@ sponsor_keywords:
   - collaborations
 
 collaboration_templates:
-  ai_agent: "Sponsored tutorial: Show how {product_name} supports AI agent workflows."
-  rag: "Technical tutorial: Use {product_name} as external context for LLM/RAG workflows."
-  python_scraping: "Sponsored coding video: Build a practical Python workflow with {product_name}."
-  seo: "Sponsored article: Use {product_name} for search visibility, monitoring, or SEO workflows."
-  n8n: "Workflow template: Automate a repeatable workflow with {product_name}."
-  general: "Sponsored technical tutorial or newsletter placement featuring {product_name}."
+  ai_agent: "赞助教程：展示 {product_name} 如何支持 AI Agent 工作流。"
+  rag: "技术教程：使用 {product_name} 为 LLM/RAG 工作流提供外部搜索上下文。"
+  python_scraping: "赞助编程视频：围绕 {product_name} 构建一个实用的 Python 搜索数据工作流。"
+  seo: "赞助文章或视频：展示 {product_name} 在搜索可见性、排名监控或 SEO 自动化中的用法。"
+  n8n: "工作流模板：用 {product_name} 自动化一个可复用的搜索数据工作流。"
+  general: "赞助技术教程或 Newsletter 露出：介绍 {product_name} 的搜索数据 API 场景。"

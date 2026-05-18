@@ -15,6 +15,8 @@ crawl:
   request_timeout_seconds: 20
   request_delay_seconds: 1.2
   max_links_per_seed: 12
+  enrich_contact_pages: true
+  max_contact_enrichment_candidates: 80
 
 ddgs:
   # Disabled by default because the current ddgs/primp TLS stack can hard-crash
@@ -28,12 +30,18 @@ ytdlp:
   enabled: true
   max_results_per_keyword: 20
   no_download: true
+  # Disabled by default because direct video detail requests may trigger
+  # YouTube bot/login checks. Search metadata remains public and cookie-free.
+  enrich_video_details: false
+  max_detail_channels: 80
 
 github:
   enabled: true
   max_results_per_keyword: 8
   unauthenticated: true
   request_timeout_seconds: 20
+  enrich_owner_profiles: true
+  max_owner_profile_requests: 40
 
 # Optional generic SERP API endpoint.
 # Keep empty unless you have a search API endpoint compatible with query parameters.

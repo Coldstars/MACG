@@ -4,6 +4,21 @@
 
 它默认会向上查找最近的 `profile.md`，读取其中的行业关键词、产品线、目标用户、使用场景和官网信息，并用这些信息生成搜索关键词和评分上下文。也可以通过 `--profile-path` 指定其他 profile。
 
+发现规则会优先利用 `profile.md` 中的 `Main Competitors / Reference Sites`：
+
+- 先生成 `竞品名 + tutorial / review / alternative / comparison / sponsor / newsletter / youtube` 等查询。
+- 优先发现已经覆盖、评测、教程、赞助或对比过竞品的渠道。
+- 竞品官网或官方频道本身会被标记为参考对象，不默认作为 outreach 候选。
+
+联系方式提取会尽量使用公开信息：
+
+- 普通网页正文和 `mailto:` 链接中的邮箱。
+- 常见混淆邮箱，例如 `name [at] domain [dot] com`。
+- 公开 contact / about / advertise / sponsor / media kit 页面。
+- YouTube 公开视频描述中的邮箱。
+- 如果没有邮箱，则保留可人工继续联系或查找的公开入口，例如 contact/about 页面、赞助页、media kit、频道主页、GitHub profile、项目主页、作者网站或公开社交主页。
+- 不绕过登录、验证码或平台隐藏邮箱。
+
 默认模式不要求 API key。它会优先使用免费公开来源：
 
 - DuckDuckGo 搜索结果（`ddgs`，默认关闭；部分 macOS 环境可能触发底层 TLS 崩溃）
@@ -15,7 +30,12 @@
 它会生成：
 
 ```text
-workspaces/channel-discovery/<campaign-slug>/index.html
+workspaces/channel-discovery/index.html
+workspaces/channel-discovery/data/master-candidates.json
+workspaces/channel-discovery/data/all-candidates.json
+workspaces/channel-discovery/data/all-candidates.csv
+workspaces/channel-discovery/data/review-queue.json
+workspaces/channel-discovery/data/runs/<run-id>.json
 workspaces/channel-discovery/<campaign-slug>/data/runs/<run-id>.json
 workspaces/channel-discovery/<campaign-slug>/data/master-candidates.json
 workspaces/channel-discovery/<campaign-slug>/data/selected-50.json
@@ -25,12 +45,13 @@ workspaces/channel-discovery/<campaign-slug>/data/selected-50.csv
 用户日常只需要打开：
 
 ```text
-workspaces/channel-discovery/<campaign-slug>/index.html
+workspaces/channel-discovery/index.html
 ```
 
 Agent / Codex 后续分析读取：
 
 ```text
+workspaces/channel-discovery/data/
 workspaces/channel-discovery/<campaign-slug>/data/
 ```
 
@@ -86,7 +107,7 @@ python src/main.py \
   --selected-count 3
 ```
 
-运行后会生成本地 HTML 和 `data/`，用于确认工具链、评分、导出和报告页面能闭环。
+运行后会更新全局中文 HTML 和 `data/`，用于确认工具链、评分、导出和报告页面能闭环。
 
 ### 真实抓取
 
@@ -101,7 +122,7 @@ python src/main.py \
 运行后打开：
 
 ```text
-workspaces/channel-discovery/profile-channel-discovery/index.html
+workspaces/channel-discovery/index.html
 ```
 
 `auto` 会尝试使用启用中的公开来源、YouTube 公开元数据、GitHub API、seed URLs 和 manual seeds。它需要当前网络能访问 YouTube、GitHub 和配置的 seed URL。`ddgs` 默认关闭；如果你确认本机环境可用，可以在 `config/sources.yaml` 中把 `ddgs.enabled` 改为 `true`。
@@ -127,7 +148,23 @@ config/sources.yaml         free providers、seed URLs、SERP API template、man
 
 ## Data Design
 
-### `data/runs/<run-id>.json`
+### 全局 `workspaces/channel-discovery/index.html`
+
+用户唯一需要查看的中文渠道库看板。每次新抓取后都会合并所有 campaign 的 master 数据、查重，并刷新这个文件。
+
+### 全局 `data/master-candidates.json`
+
+保存跨 campaign、跨多次 run 的长期渠道池。
+
+### 全局 `data/all-candidates.json`
+
+当前全局 HTML 展示使用的去重候选合集。
+
+### 全局 `data/all-candidates.csv`
+
+方便导入 Excel、飞书、多维表格。
+
+### Campaign `data/runs/<run-id>.json`
 
 保存单次抓取完整数据：
 
@@ -140,7 +177,7 @@ config/sources.yaml         free providers、seed URLs、SERP API template、man
 - review_queue
 - summary
 
-### `data/master-candidates.json`
+### Campaign `data/master-candidates.json`
 
 保存跨多次 run 的长期渠道池：
 
@@ -153,11 +190,11 @@ config/sources.yaml         free providers、seed URLs、SERP API template、man
 - status
 - notes
 
-### `data/selected-50.json`
+### Campaign `data/selected-50.json`
 
-当前 HTML 展示使用的 50 个候选渠道。
+当前 campaign 单次筛选出的 50 个候选渠道。全局 HTML 不直接读取这个文件，而是读取合并后的全局数据。
 
-### `data/selected-50.csv`
+### Campaign `data/selected-50.csv`
 
 方便导入 Excel、飞书、多维表格。
 

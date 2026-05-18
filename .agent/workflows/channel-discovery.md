@@ -56,36 +56,47 @@ seo-automation-newsletters
 
 本 workflow 是数据型 workflow。`data/runs/<run-id>.json` 是 `process.md` 的等价结构化运行记录，必须记录 input、provider status、候选数据、评分结果、summary 和下一步复核状态。
 
-每次执行本 workflow，用户主要只看一个文件：
+每次执行本 workflow，用户只看一个全局汇总文件：
 
 ```text
-workspaces/channel-discovery/<campaign-slug>/index.html
+workspaces/channel-discovery/index.html
 ```
+
+不要再为每个 campaign 生成单独 `index.html`。每次抓取只保存该次 campaign 的结构化数据，并把所有 campaign 的 master 数据合并、查重后刷新全局 `index.html`。
 
 同时必须保留 Agent 可读数据层：
 
 ```text
-workspaces/channel-discovery/<campaign-slug>/
+workspaces/channel-discovery/
 ├── index.html
-└── data/
-    ├── runs/
-    │   └── <run-id>.json
-    ├── master-candidates.json
-    ├── selected-50.json
-    ├── review-queue.json
-    └── selected-50.csv
+├── data/
+│   ├── runs/
+│   │   └── <run-id>.json
+│   ├── master-candidates.json
+│   ├── all-candidates.json
+│   ├── review-queue.json
+│   └── all-candidates.csv
+└── <campaign-slug>/
+    └── data/
+        ├── runs/
+        │   └── <run-id>.json
+        ├── master-candidates.json
+        ├── selected-50.json
+        ├── review-queue.json
+        └── selected-50.csv
 ```
 
 ### File Responsibilities
 
 | File | Consumer | Responsibility |
 | --- | --- | --- |
-| `index.html` | 用户 / 渠道运营 | 人类可读的渠道候选看板 |
+| `workspaces/channel-discovery/index.html` | 用户 / 渠道运营 | 唯一人类可读的全局渠道候选看板，必须使用中文 UI |
 | `data/runs/<run-id>.json` | Agent / Codex | 单次抓取完整记录，包括 input、raw、normalized、scored、selected、summary |
-| `data/master-candidates.json` | Agent / Codex | 跨多次 run 合并后的长期渠道池 |
-| `data/selected-50.json` | HTML / Agent | 当前 HTML 展示使用的 50 个候选渠道 |
-| `data/review-queue.json` | Agent / 用户 | 人工复核队列，包含 review status、review notes、缺失信息和复核重点 |
-| `data/selected-50.csv` | 用户 / 表格工具 | 方便导入 Excel、飞书、多维表格 |
+| `data/master-candidates.json` | Agent / Codex | 跨 campaign、跨多次 run 合并后的长期渠道池 |
+| `data/all-candidates.json` | HTML / Agent | 全局 HTML 展示使用的去重渠道合集 |
+| `data/review-queue.json` | Agent / 用户 | 全局人工复核队列，包含 review status、review notes、缺失信息和复核重点 |
+| `data/all-candidates.csv` | 用户 / 表格工具 | 全局渠道合集表格版本，方便导入 Excel、飞书、多维表格 |
+| `<campaign-slug>/data/selected-50.json` | Agent / Codex | 单次 campaign 的 Top 50 候选，用于调试和复盘，不是用户主入口 |
 
 默认不生成 `process.md`、`campaign-brief.md`、`seed-keywords.md`、`source-plan.md`、`shortlist.md`、`outreach-plan.md`、`review.md` 等大量 Markdown 产物。
 
@@ -104,7 +115,8 @@ target_channels:
   - newsletter
   - technical_blog
 keywords:
-  - 默认从 profile.md 的行业关键词、产品线、目标用户和使用场景生成
+  - 默认优先从 profile.md 的竞品/参考站生成竞品相关渠道查询
+  - 然后补充行业关键词、产品线、目标用户和使用场景
 language: English
 max_raw_candidates: 500
 selected_count: 50
@@ -118,7 +130,12 @@ providers:
 每次执行 `channel-discovery` 必须生成：
 
 ```text
-workspaces/channel-discovery/<campaign-slug>/index.html
+workspaces/channel-discovery/index.html
+workspaces/channel-discovery/data/master-candidates.json
+workspaces/channel-discovery/data/all-candidates.json
+workspaces/channel-discovery/data/review-queue.json
+workspaces/channel-discovery/data/all-candidates.csv
+workspaces/channel-discovery/data/runs/<run-id>.json
 workspaces/channel-discovery/<campaign-slug>/data/runs/<run-id>.json
 workspaces/channel-discovery/<campaign-slug>/data/master-candidates.json
 workspaces/channel-discovery/<campaign-slug>/data/selected-50.json
@@ -128,13 +145,14 @@ workspaces/channel-discovery/<campaign-slug>/data/selected-50.csv
 
 ### `index.html` 必须包含
 
-- 页面标题：`<product_name> Channel Discovery Report`
-- campaign name
-- generated time
+- 页面标题：`<product_name> 渠道库`
+- 中文 UI
+- 最新 campaign / run 信息
+- 更新时间
 - 顶部统计卡片
-- 本次搜索条件
+- 本次搜索条件和 provider 状态
 - Top 10 推荐渠道
-- 50 个候选渠道表格
+- 多次抓取合并后的去重渠道表格
 - 每个渠道的评分和分项分数
 - 联系方式、联系页、赞助页、media kit 链接
 - 推荐合作方式
@@ -174,13 +192,13 @@ workspaces/channel-discovery/<campaign-slug>/data/selected-50.csv
 - `status`
 - `notes`
 
-### `data/selected-50.json`
+### `data/all-candidates.json`
 
-必须保存当前 HTML 展示使用的 50 个候选渠道。若 HTML 内嵌数据与 `selected-50.json` 不一致，以 `selected-50.json` 为准。
+必须保存当前全局 HTML 展示使用的去重渠道合集。若 HTML 内嵌数据与 `all-candidates.json` 不一致，以 `all-candidates.json` 为准。
 
-### `data/selected-50.csv`
+### `data/all-candidates.csv`
 
-必须保存当前 50 个候选渠道的表格版本，用于人工导入 Excel、飞书、多维表格。
+必须保存当前全局渠道合集的表格版本，用于人工导入 Excel、飞书、多维表格。
 
 ### `data/review-queue.json`
 
@@ -278,7 +296,7 @@ Low:    fit_score < 60
    - `seen_count`
    - `last_score`
    - `best_score`
-5. 不要把同一频道、同一 newsletter、同一 domain 重复展示在 50 个候选中。
+5. 不要把同一频道、同一 newsletter、同一 domain 重复展示在全局渠道库中。
 
 ## HTML Report Requirements
 
@@ -298,13 +316,13 @@ Low:    fit_score < 60
 
 表格交互必须包含：
 
-- keyword search
-- filter by channel_type
-- filter by priority
-- filter only candidates with contact
-- filter only candidates with sponsor page
-- sort by fit_score
-- click row to expand detail
+- 关键词搜索
+- 按 channel_type 筛选
+- 按 priority 筛选
+- 只看有联系方式的候选
+- 只看有 sponsor page / media kit 的候选
+- 按 fit_score 排序
+- 点击行展开详情
 
 ## Recommended Collaboration Generation
 
@@ -312,11 +330,11 @@ Low:    fit_score < 60
 
 示例：
 
-- Sponsored YouTube tutorial: Show a concrete workflow using `{product_name}`
-- Newsletter sponsor: Position `{product_name}` for the profile target users
-- Technical article: Build a practical integration or workflow with `{product_name}`
-- Workflow template: Automate a repeatable use case with `{product_name}`
-- Ecosystem guide: Explain how `{product_name}` fits a profile-defined scenario
+- 赞助 YouTube 教程：展示一个使用 `{product_name}` 的具体工作流
+- Newsletter 赞助位：面向 profile 中的目标用户定位 `{product_name}`
+- 技术文章：构建一个实用集成或工作流
+- 工作流模板：自动化一个可复用使用场景
+- 生态指南：解释 `{product_name}` 如何适配 profile 中定义的场景
 
 ## Human Gates
 
@@ -336,7 +354,7 @@ Low:    fit_score < 60
 
 ### Gate 2: Candidate Review
 
-生成 `index.html` 后，用户查看 50 个候选渠道，决定是否继续：
+生成全局 `index.html` 后，用户查看渠道合集，决定是否继续：
 
 - 扩展关键词
 - 加入新渠道类型
@@ -357,6 +375,10 @@ Low:    fit_score < 60
 - 不伪造邮箱、报价、播放量、订阅数。
 - 不把猜测写成事实。
 - 联系方式、赞助页、粉丝数、播放量、报价等缺失时必须显示 `Unknown`。
+- 发现渠道时优先搜索已经覆盖、评测、教程、赞助或对比过 profile 中竞品/参考站的渠道。
+- 必须尽量从公开页面、公开 contact/about/advertise/sponsor/media kit 页面、公开视频描述中提取邮箱。
+- 如果抓不到邮箱，必须保留可人工继续联系或查找的公开联系方式入口，例如 contact/about 页面、赞助页、media kit、频道主页、GitHub profile、项目主页、作者网站或公开社交主页。
+- 不得绕过登录或验证码去查看平台隐藏邮箱。
 - API key 只能从 `.env` 或环境变量读取。
 - 不允许把 API key 写入代码、日志、workspace 或 Git。
 - 抓取必须使用合理请求频率。
@@ -367,20 +389,20 @@ Low:    fit_score < 60
 1. Orchestrator 读取 registry，选择 `channel-discovery`。
 2. Orchestrator 确认 campaign scope。
 3. 如需要补充关键词策略、渠道来源或竞品渠道研究，Orchestrator 可启用 Researcher。
-4. `tools/channel-finder` 执行候选发现、抓取、提取、评分、去重，并生成 `index.html` 和 `data/`。
-5. Channel Analyst 检查 `data/runs/<run-id>.json`、`data/selected-50.json` 和 `data/review-queue.json`。
+4. `tools/channel-finder` 执行候选发现、抓取、提取、评分、去重，保存 campaign 数据，并刷新全局 `workspaces/channel-discovery/index.html`。
+5. Channel Analyst 检查全局 `data/all-candidates.json`、`data/review-queue.json` 和最新 `data/runs/<run-id>.json`。
 6. 如准备真实 outreach、发现合规风险或候选质量异常，Orchestrator 可启用 Reviewer。
-7. 用户打开 `index.html` 查看结果。
+7. 用户打开 `workspaces/channel-discovery/index.html` 查看结果。
 
 ## Done Criteria
 
 本 workflow 完成时必须满足：
 
-- `index.html` 已生成且可本地打开。
+- `workspaces/channel-discovery/index.html` 已生成且可本地打开。
 - `data/runs/<run-id>.json` 已保存单次 run 数据。
 - `data/master-candidates.json` 已更新。
-- `data/selected-50.json`、`data/review-queue.json` 和 `data/selected-50.csv` 已生成。
-- 候选渠道不超过 50 个展示项。
+- `data/all-candidates.json`、`data/review-queue.json` 和 `data/all-candidates.csv` 已生成。
+- 全局 index 展示多次抓取后的去重渠道合集。
 - 缺失信息显示 `Unknown`。
 - 没有自动发送邮件。
 - 没有绕过登录、验证码、付费墙或平台限制。
